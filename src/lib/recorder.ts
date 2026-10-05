@@ -66,20 +66,26 @@ export const onStopRecoiding = () => {
 };
 
 export const onDataAvailable = async (e: BlobEvent) => {
-  if (e.data.size > 0 && videoTransferFileName) {
-    try {
-      socket.emit('video-chunks', ({
-        chunks: e.data,
-        filename: videoTransferFileName
-      }))
-    } catch (error) {
-      console.log('Error in blob ', error)
+  if (!e.data.size || !videoTransferFileName) {
+    return;
+  }
+
+  try {
+    if (!socket.connected) {
+      console.error("Socket is not connected");
+      return;
     }
+
+    const arrayBuffer = await e.data.arrayBuffer();
+
+    socket.emit("video-chunks", {
+      chunks: arrayBuffer,
+      filename: videoTransferFileName,
+    });
+  } catch (error) {
+    console.error("Error sending video chunk:", error);
   }
-  else {
-    console.error('No data available or filename is missing')
-  }
-}
+};
 
 export const stopRecording = () => {
   hidePluginWindow(false)
